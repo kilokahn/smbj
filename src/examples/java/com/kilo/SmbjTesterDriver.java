@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2017 - SMBJ Contributors
+ * Copyright (C)2016 - SMBJ Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.EnumSet;
 
-import javax.security.auth.Subject;
-
 import com.hierynomus.msdtyp.AccessMask;
 import com.hierynomus.msfscc.FileAttributes;
 import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation;
@@ -30,8 +28,8 @@ import com.hierynomus.mssmb2.SMB2ShareAccess;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
-import com.hierynomus.smbj.auth.GSSAuthenticationContext;
-import com.hierynomus.smbj.auth.SpnegoAuthenticator;
+import com.hierynomus.smbj.auth.PlatformGSSAuthenticationContext;
+import com.hierynomus.smbj.auth.PlatformGSSAuthenticator;
 import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
@@ -51,7 +49,8 @@ public class SmbjTesterDriver {
     }
 
     public static void main(String args[]) throws Exception {
-        if(args.length != 3){
+        if(args.length != 3) {
+            System.out.println(args.length);
             help();
             return;
         }
@@ -59,10 +58,11 @@ public class SmbjTesterDriver {
         SHARE = args[1];
         FOLDER = args[2];
 
-        SMBClient client = new SMBClient();
+        SmbConfig config = SmbConfig.builder().withAuthenticators(new PlatformGSSAuthenticator.Factory()).build();
+        SMBClient client = new SMBClient(config);
 
         try (Connection connection = client.connect(URL)) {
-            AuthenticationContext ac = new GSSAuthenticationContext("","",null, null);
+            AuthenticationContext ac = new PlatformGSSAuthenticationContext();
             Session session = connection.authenticate(ac);
             // Connect to Share
             try (DiskShare share = (DiskShare) session.connectShare(SHARE)) {
