@@ -18,6 +18,8 @@ plugins {
 group = "com.hierynomus"
 defaultTasks "build"
 
+apply plugin: 'application'
+
 repositories {
   mavenCentral()
   maven { url "https://jitpack.io" }
@@ -31,6 +33,31 @@ configurations.compile.transitive = false
 
 def bouncycastleVersion = "1.57"
 
+configurations {
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
+  examplesCompile.extendsFrom compile
+  examplesRuntime.extendsFrom runtime
+}
+
+sourceSets {
+  integrationTest {
+    groovy {
+      compileClasspath += sourceSets.main.output + sourceSets.test.output
+      runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+      srcDir file('src/it/groovy')
+    }
+    resources.srcDir file('src/it/resources')
+  }
+  examples {
+    java {
+      compileClasspath += sourceSets.main.output
+      runtimeClasspath += sourceSets.main.output
+      srcDir file('src/examples/java')
+    }
+  }
+}
+
 dependencies {
   signature 'org.codehaus.mojo.signature:java17:1.0@signature'
 
@@ -43,6 +70,8 @@ dependencies {
   testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
   testCompile 'commons-io:commons-io:2.5'
   testRuntime 'ch.qos.logback:logback-classic:1.2.3'
+
+  runtime files(sourceSets.examples.output.files)
 }
 
 license {
@@ -84,22 +113,6 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   from javadoc.destinationDir
 }
 
-configurations {
-  integrationTestCompile.extendsFrom testCompile
-  integrationTestRuntime.extendsFrom testRuntime
-}
-
-sourceSets {
-  integrationTest {
-    groovy {
-      compileClasspath += sourceSets.main.output + sourceSets.test.output
-      runtimeClasspath += sourceSets.main.output + sourceSets.test.output
-      srcDir file('src/it/groovy')
-    }
-    resources.srcDir file('src/it/resources')
-  }
-}
-
 task integrationTest(type: Test) {
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
@@ -125,6 +138,7 @@ idea {
     testSourceDirs += file("src/it/groovy")
     // Ugly hack, the it/resources needs to be marked as testSourceDir before it can be picked up by the iml.withXml
     testSourceDirs += file('src/it/resources')
+    sourceDirs += file('src/example/java')
   }
   module.iml.withXml {
     def node = it.asNode()
@@ -249,3 +263,14 @@ project.tasks.release.dependsOn(project.tasks.build)
 project.tasks.release.finalizedBy(project.tasks.bintrayUpload)
 project.tasks.jacocoTestReport.dependsOn(project.tasks.test)
 project.tasks.check.dependsOn(project.tasks.jacocoTestReport)
+
+mainClassName="com.kilo.SmbjTesterDriver"
+applicationDefaultJvmArgs = ["-Dsun.security.jgss.native=true", "-Dsun.security.jgss.lib=/usr/libexec/libgsswrap.so",
+                             "-Dsun.security.jgss.debug=true", "-Dsun.security.jgssnative.debug=true"]
+
+project.tasks.run.dependsOn(project.tasks.compileExamplesJava)
+run {
+  if(System.getProperty("exec.args") != null) {
+    args System.getProperty("exec.args").split()
+  }
+}
