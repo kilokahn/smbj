@@ -43,6 +43,13 @@ public class SmbjTesterDriver {
     private static String SHARE = "";
     private static String FOLDER = "";
 
+    static {
+        System.setProperty("sun.security.jgss.native", "true");
+        System.setProperty("sun.security.jgss.lib", "/usr/libexec/libgsswrap.so");
+        System.setProperty("sun.security.jgss.nativegss.debug", "true");
+        System.setProperty("sun.security.jgss.debug", "true");
+    }
+
     public static void main(String args[]) throws Exception {
         if(args.length != 3){
             help();
