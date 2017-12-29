@@ -28,8 +28,10 @@ import com.hierynomus.mssmb2.SMB2ShareAccess;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
+import com.hierynomus.smbj.auth.GSSAuthenticationContext;
 import com.hierynomus.smbj.auth.PlatformGSSAuthenticationContext;
 import com.hierynomus.smbj.auth.PlatformGSSAuthenticator;
+import com.hierynomus.smbj.auth.SpnegoAuthenticator;
 import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
@@ -58,11 +60,13 @@ public class SmbjTesterDriver {
         SHARE = args[1];
         FOLDER = args[2];
 
-        SmbConfig config = SmbConfig.builder().withAuthenticators(new PlatformGSSAuthenticator.Factory()).build();
+        //SmbConfig config = SmbConfig.builder().withAuthenticators(new PlatformGSSAuthenticator.Factory()).build();
+        SmbConfig config = SmbConfig.builder().withAuthenticators(new SpnegoAuthenticator.Factory()).build();
         SMBClient client = new SMBClient(config);
 
         try (Connection connection = client.connect(URL)) {
-            AuthenticationContext ac = new PlatformGSSAuthenticationContext();
+            //AuthenticationContext ac = new PlatformGSSAuthenticationContext();
+            AuthenticationContext ac = new GSSAuthenticationContext(null, null, null, null);
             Session session = connection.authenticate(ac);
             // Connect to Share
             try (DiskShare share = (DiskShare) session.connectShare(SHARE)) {
